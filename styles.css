@@ -15,6 +15,10 @@ body{
     border-radius: 10px;
     padding: 40px;
 }
+#question{
+    font-weight: 600;
+    text-decoration: underline;
+}
 .app h1 {
     font-size: 25px;
     color: #001e4d;
