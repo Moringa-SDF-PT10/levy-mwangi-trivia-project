@@ -2,19 +2,61 @@ fetch("https://opentdb.com/api.php?amount=10&category=18&difficulty=medium&type=
   .then((resp) => resp.json())
   .then((data) => {
     const questions = data.results
-    renderQuestions(questions)
+    startTrivia(questions)
     console.log(data.results)
    })
    .catch((error) => {
     console.error("Error fetching trivia data:", error);
   });
 
-  function renderQuestions(questions) {
-    const triviaContainer = document.getElementById("trivia-container");
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let incorrectQuestions = []; 
   
- questions.forEach((question, index) => {
+  function startTrivia(questions) {
+    const nextButton = document.getElementById("next-btn");
+    const triviaContainer = document.getElementById("trivia-container");
+
+    renderQuestion(questions[currentQuestionIndex], currentQuestionIndex) 
+    
+    document.addEventListener("click", () => {
+        const selectedAnswer = document.querySelector(
+          `input[name="question-${currentQuestionIndex}"]:checked`
+        );
+    
+        if (!selectedAnswer) {
+          click("Please select an answer before proceeding.");
+          return;
+        }
+    
+        if (selectedAnswer.value === questions[currentQuestionIndex].correct_answer) {
+          score++;
+        } else {
+
+          incorrectQuestions.push({
+            question: questions[currentQuestionIndex].question,
+            correctAnswer: questions[currentQuestionIndex].correct_answer,
+            selectedAnswer: selectedAnswer.value,
+          });
+        }
+    
+        currentQuestionIndex++;
+    
+        if (currentQuestionIndex < questions.length) {
+          triviaContainer.innerHTML = ""; 
+          renderQuestion(questions[currentQuestionIndex], currentQuestionIndex);
+        } else {
+
+          showResults();
+        }
+      });
+    }
+    
+    function renderQuestion(question, index) {
+      const triviaContainer = document.getElementById("trivia-container");
       const answers = [...question.incorrect_answers, question.correct_answer];
-     // shuffleArray(answers); // Shuffle the answers for randomness
+      
+    
   
       const questionHTML = `
         <div class="question-container">
@@ -36,40 +78,45 @@ fetch("https://opentdb.com/api.php?amount=10&category=18&difficulty=medium&type=
         </div>
       `;
   
-      triviaContainer.innerHTML += questionHTML;
-    });
+      triviaContainer.innerHTML = questionHTML;
 }
 
-// function shuffleArray(array) {
-//     for (let i = array.length - 1; i > 0; i--) {
-//         const j = Math.floor(Math.random() * (i + 1))
-//         [array[i], array[j]] = [array[j], array[i]];
-//     }
-// }
-   
-// const questionElement = document.getElementById("question")  
-// const multipleChoice = document.getElementById("multiple-choices") 
-// const nextButton = document.getElementById("next-btn")
+function showResults() {
+    const triviaContainer = document.getElementById("trivia-container");
+    const nextButton = document.getElementById("next-btn");
+  
+    let resultsHTML = `
+      <div class="results-container">
+        <h2>You scored ${score} out of ${currentQuestionIndex}!</h2>
+    `;
+  
+  
+    if (incorrectQuestions.length > 0) {
+      resultsHTML += `
+        <h3>Questions you got wrong:</h3>
+        <ul>
+          ${incorrectQuestions
+            .map(
+              (item) => `
+              <li>
+                <strong>Question:</strong> ${item.question}<br>
+                <strong>Your Answer:</strong> ${item.selectedAnswer}<br>
+                <strong>Correct Answer:</strong> ${item.correctAnswer}
+              </li>
+            `
+            )
+            .join("")}
+        </ul>
+      `;
+    } else {
+      resultsHTML += `<p>Great job! You got all the questions correct!</p>`;
+    }
+  
+    resultsHTML += "</div>";
+  
+    triviaContainer.innerHTML = resultsHTML;
+  
+    nextButton.innerHTML = "Restart";
+    nextButton.onclick = () => window.location.reload();
+  }
 
-// let currentQuestionIndex = 0; 
-// let score = 0;
-
-function startQuiz(){
-  currentQuestionIndex = 0
-  score = 0
-  nextButton.innerHTML = "Next"
-  showQuestion() 
- }
-
-// function showQuestion(){
-//      let currentQuestion = results[currentQuestionIndex]
-//      let questionNo = currentQuestionIndex + 1
-//      questionElement.innerHTML = questionNo + ". " + currentQuestion.question
-
-//      currentQuestion.answer.forEach(answer => {
-//         const button = document.createElement("button")
-//         button.innerHTML = answer.text
-//         button.classList.add("btn")
-//         answerButton
-//      })
-// }
