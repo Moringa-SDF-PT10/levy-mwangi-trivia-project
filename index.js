@@ -117,6 +117,6 @@ function showResults() {
     triviaContainer.innerHTML = resultsHTML;
   
     nextButton.innerHTML = "Restart";
-    nextButton.addEventListener = ('click', () => window.location.reload());
+    nextButton.addEventListener('click', () => window.location.reload());
   }
 
