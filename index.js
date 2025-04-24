@@ -1,147 +1,122 @@
-let questions = [];
-let currentQuestionIndex = 0;
-let score = 0;
-
-const  questionElement = document.getElementById("question");
-const multipleChoice = document.getElementById("multiple-choices");
-const nextButton = document.getElementById("next-btn")
-
 fetch("https://opentdb.com/api.php?amount=10&category=18&difficulty=medium&type=multiple")
   .then((resp) => resp.json())
   .then((data) => {
     const questions = data.results
+    startTrivia(questions)
     console.log(data.results)
    })
    .catch((error) => {
     console.error("Error fetching trivia data:", error);
   });
 
-//   function renderQuestions(questions) {
-//     const triviaContainer = document.getElementById("trivia-container");
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let incorrectQuestions = []; 
   
-//  questions.forEach((question, index) => {
-//       const answers = [...question.incorrect_answers, question.correct_answer];
-     // shuffleArray(answers); // Shuffle the answers for randomness
-//   }
-// )}
+  function startTrivia(questions) {
+    const nextButton = document.getElementById("next-btn");
+    const triviaContainer = document.getElementById("trivia-container");
 
-  
-//       const questionHTML = `
-//         <div class="question-container">
-//           <h3>Q${index + 1}: ${question.question}</h3>
-//           <ul class="answers">
-//             ${answers
-//               .map(
-//                 (answer) => `
-//                 <li>
-//                   <label>
-//                     <input type="radio" name="question-${index}" value="${answer}">
-//                     ${answer}
-//                   </label>
-//                 </li>
-//               `
-//               )
-//               .join("")}
-//           </ul>
-//         </div>
-//       `;
-  
-//       triviaContainer.innerHTML += questionHTML;
-//     });
-// }
-
-// function shuffleArray(array) {
-//     for (let i = array.length - 1; i > 0; i--) {
-//         const j = Math.floor(Math.random() * (i + 1))
-//         [array[i], array[j]] = [array[j], array[i]];
-//     }
-// }
-   
-
-
-function startQuiz(){
-  currentQuestionIndex = 0
-  score = 0
-  nextButton.innerHTML = "Next"
-  showQuestion(questions[currentQuestionIndex])
- }
-
-function showQuestion(currentQuestion){
-    resetState()
+    renderQuestion(questions[currentQuestionIndex], currentQuestionIndex) 
     
-    questionElement.innerHTML = currentQuestion.question;
-
-    const answers = [...currentQuestion.incorrect_answers, currentQuestion.correct_answer];
-    shuffleArray(answers);
-  
+    document.addEventListener("click", () => {
+        const selectedAnswer = document.querySelector(
+          `input[name="question-${currentQuestionIndex}"]:checked`
+        );
     
-    const buttons = multipleChoice.querySelectorAll(".btn");
-    buttons.forEach((button, index) => {
-      button.style.display = "inline-block";
-      button.innerHTML = answers[index]
-      button.classList.remove("correct", "incorrect"); 
-  
-      button.addEventListener("click", () => {
-        selectAnswer(button, currentQuestion.correct_answer);
+        if (!selectedAnswer) {
+          click("Please select an answer before proceeding.");
+          return;
+        }
+    
+        if (selectedAnswer.value === questions[currentQuestionIndex].correct_answer) {
+          score++;
+        } else {
+
+          incorrectQuestions.push({
+            question: questions[currentQuestionIndex].question,
+            correctAnswer: questions[currentQuestionIndex].correct_answer,
+            selectedAnswer: selectedAnswer.value,
+          });
+        }
+    
+        currentQuestionIndex++;
+    
+        if (currentQuestionIndex < questions.length) {
+          triviaContainer.innerHTML = ""; 
+          renderQuestion(questions[currentQuestionIndex], currentQuestionIndex);
+        } else {
+
+          showResults();
+        }
       });
-    });
-  }
+    }
+    
+    function renderQuestion(question, index) {
+      const triviaContainer = document.getElementById("trivia-container");
+      const answers = [...question.incorrect_answers, question.correct_answer];
+      
+    
   
-  function selectAnswer(selectedButton, correctAnswer, questions) {
-    const isCorrect = selectedButton.innerHTML === correctAnswer;
+      const questionHTML = `
+        <div class="question-container">
+          <h3>Q${index + 1}: ${question.question}</h3>
+          <ul class="answers">
+            ${answers
+              .map(
+                (answer) => `
+                <li>
+                  <label>
+                    <input type="radio" name="question-${index}" value="${answer}">
+                    ${answer}
+                  </label>
+                </li>
+              `
+              )
+              .join("")}
+          </ul>
+        </div>
+      `;
   
-    if (isCorrect) {
-      selectedButton.classList.add("correct");
-      score++;
+      triviaContainer.innerHTML = questionHTML;
+}
+
+function showResults() {
+    const triviaContainer = document.getElementById("trivia-container");
+    const nextButton = document.getElementById("next-btn");
+  
+    let resultsHTML = `
+      <div class="results-container">
+        <h2>You scored ${score} out of ${currentQuestionIndex}!</h2>
+    `;
+  
+  
+    if (incorrectQuestions.length > 0) {
+      resultsHTML += `
+        <h3>Questions you got wrong:</h3>
+        <ul>
+          ${incorrectQuestions
+            .map(
+              (item) => `
+              <li>
+                <strong>Question:</strong> ${item.question}<br>
+                <strong>Your Answer:</strong> ${item.selectedAnswer}<br>
+                <strong>Correct Answer:</strong> ${item.correctAnswer}
+              </li>
+            `
+            )
+            .join("")}
+        </ul>
+      `;
     } else {
-      selectedButton.classList.add("incorrect");
+      resultsHTML += `<p>Great job! You got all the questions correct!</p>`;
     }
   
-    
-    const buttons = multipleChoice.querySelectorAll(".btn");
-    buttons.forEach((button) => {
-      button.disabled = true; 
-      if (button.innerHTML === correctAnswer) {
-        button.classList.add("correct");
-      }
-    });
+    resultsHTML += "</div>";
   
-    const nextButton = document.querySelector(".next-btn");
-    nextButton.style.display = "block";
+    triviaContainer.innerHTML = resultsHTML;
   
-    nextButton.addEventListener("click", () => {
-      currentQuestionIndex++;
-      if (currentQuestionIndex < questions.length) {
-        showQuestion(questions[currentQuestionIndex], questions);
-      } else {
-        showScore();
-      }
-    });
-  }
-  
-  function resetState() {
-    const nextButton = document.querySelector(".next-btn");
-    nextButton.style.display = "none";
+    nextButton.innerHTML = "Restart";
+    nextButton.addEventListener = ('click', () => window.location.reload());
   }
 
-  function showScore() {
-    const questionElement = document.getElementById("question");
-    const multipleChoice = document.getElementById("multiple-choices");
-    const nextButton = document.querySelector(".next-btn");
-  
-    questionElement.innerHTML = `You scored ${score} out of 10!`;
-    multipleChoice.innerHTML = ""; 
-    nextButton.innerHTML = "Restart";
-    nextButton.style.display = "block";
-  
-    nextButton.addEventListener("click", () => {
-      window.location.reload(); 
-    });
-  }
-  
-  function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-}
